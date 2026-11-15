@@ -1,1 +1,1 @@
-console.log("Solana Bot is ready!");
+console.log("Solana Sniper Bot running automatically!");
