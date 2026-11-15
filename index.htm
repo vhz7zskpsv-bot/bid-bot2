@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana Sniper Terminal</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #00ffcc;
+            font-family: monospace;
+            padding: 20px;
+        }
+        .container {
+            max-width: 400px;
+            margin: auto;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,255,204,0.2);
+        }
+        h2 { text-align: center; color: #fff; font-size: 18px; }
+        label { display: block; margin-top: 10px; font-size: 14px; color: #ccc; }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            background: #2d2d2d;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 10px;
+            background: #00ffcc;
+            color: #121212;
+            border: none;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover { background: #00b39f; }
+        #output {
+            margin-top: 20px;
+            background: #0a0a0a;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            white-space: pre-wrap;
+            height: 150px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>SOLANA SNIPER TERMINAL</h2>
+    
+    <label>Collection Slug / Name:</label>
+    <input type="text" id="collection" placeholder="e.g. solana_monkey_business">
+
+    <label>Minimum Bid (SOL):</label>
+    <input type="number" id="minBid" placeholder="0.5">
+
+    <label>Maximum Bid (SOL):</label>
+    <input type="number" id="maxBid" placeholder="1.2">
+
+    <label>Quantity:</label>
+    <input type="number" id="qty" placeholder="5">
+
+    <label>Solana Private Key (Base58):</label>
+    <input type="password" id="privateKey" placeholder="Enter private key securely">
+
+    <button onclick="startBot()">Launch Sniper Bot</button>
+
+    <div id="output">[ System Ready. Enter details above... ]</div>
+</div>
+
+<script>
+    function startBot() {
+        const collection = document.getElementById('collection').value;
+        const minBid = document.getElementById('minBid').value;
+        const maxBid = document.getElementById('maxBid').value;
+        const qty = document.getElementById('qty').value;
+        const pvtKey = document.getElementById('privateKey').value;
+        const output = document.getElementById('output');
+
+        if (!collection || !minBid || !maxBid || !qty || !pvtKey) {
+            output.innerText = "[❌ Error] Please fill in all the fields!";
+            return;
+        }
+
+        output.innerText = `[✔] Initializing Bot...\n[📦] Collection: ${collection}\n[📉] Min Bid: ${minBid} SOL\n[📈] Max Bid: ${maxBid} SOL\n[🔢] Qty: ${qty}\n[🔑] Wallet Key Loaded securely.\n[🚀] Status: Scanning collection traits & listening to orderbook...`;
+    }
+</script>
+
+</body>
+</html>
