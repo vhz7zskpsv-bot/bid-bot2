@@ -35,7 +35,7 @@
             font-size: 14px;
             color: #b0b0b0;
         }
-        input, textarea {
+        input, select {
             width: 100%;
             padding: 10px;
             background: #2a2a2a;
@@ -45,31 +45,21 @@
             font-size: 14px;
             box-sizing: border-box;
         }
-        input:focus, textarea:focus {
+        input:focus, select:focus {
             border-color: #00ffcc;
             outline: none;
         }
-        .traits-box {
-            background: #252525;
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid #444;
-            font-size: 13px;
-        }
-        .trait-pill {
-            display: inline-block;
+        .btn-secondary {
             background: #333;
             color: #00ffcc;
-            padding: 5px 10px;
-            border-radius: 4px;
-            margin: 3px;
+            border: 1px solid #00ffcc;
+            margin-top: 5px;
+            padding: 8px;
+            font-size: 14px;
             cursor: pointer;
-            border: 1px solid #00ffcc55;
-            font-size: 12px;
         }
-        .trait-pill:hover {
-            background: #00ffcc;
-            color: #121212;
+        .btn-secondary:hover {
+            background: #222;
         }
         button {
             width: 100%;
@@ -97,6 +87,15 @@
             margin-top: 20px;
             border-radius: 4px;
         }
+        .traits-box {
+            background: #252525;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #444;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -107,18 +106,14 @@
         <div class="form-group">
             <label>Magic Eden Collection Link / URL or Slug:</label>
             <input type="text" id="collectionInput" placeholder="e.g. https://magiceden.io/marketplace/y00ts">
+            <button class="btn-secondary" onclick="fetchTraits()">Load Real Collection Traits</button>
         </div>
 
         <div class="form-group">
-            <label>Target Traits (Click to add or type custom):</label>
-            <div class="traits-box" style="margin-bottom: 8px;">
-                <span class="trait-pill" onclick="addTrait('Gold Eyes')">+ Gold Eyes</span>
-                <span class="trait-pill" onclick="addTrait('Laser Eyes')">+ Laser Eyes</span>
-                <span class="trait-pill" onclick="addTrait('Crown')">+ Crown</span>
-                <span class="trait-pill" onclick="addTrait('Legendary')">+ Legendary</span>
-                <span class="trait-pill" onclick="addTrait('Diamond Skin')">+ Diamond Skin</span>
+            <label>Select Traits (Fetched from Collection):</label>
+            <div id="traitsContainer" class="traits-box">
+                <span style="color: #777;">Enter link above and click 'Load Real Collection Traits'...</span>
             </div>
-            <input type="text" id="traits" placeholder="e.g. Gold Eyes, Crown (Comma separated)">
         </div>
 
         <div class="form-group">
@@ -144,43 +139,88 @@
         <button onclick="launchBot()">Launch Sniper Bot</button>
 
         <div class="console" id="consoleLog">
-            [ System Ready. Enter collection link and details... ]
+            [ System Ready. Enter collection link & load traits... ]
         </div>
     </div>
 
     <script>
-        function addTrait(traitName) {
-            const traitsInput = document.getElementById('traits');
-            if (traitsInput.value.trim() === '') {
-                traitsInput.value = traitName;
-            } else {
-                traitsInput.value += ', ' + traitName;
+        function getCleanSlug() {
+            let inputVal = document.getElementById('collectionInput').value.trim();
+            if (!inputVal) return '';
+            if (inputVal.includes('magiceden.io')) {
+                const parts = inputVal.split('/');
+                return parts[parts.length - 1] || parts[parts.length - 2];
             }
+            return inputVal;
+        }
+
+        async function fetchTraits() {
+            const slug = getCleanSlug();
+            const consoleLog = document.getElementById('consoleLog');
+            const traitsContainer = document.getElementById('traitsContainer');
+
+            if (!slug) {
+                consoleLog.innerHTML += "<br><span style='color: #ff4444;'>[Error] Please enter a valid Collection link or slug first!</span>";
+                return;
+            }
+
+            consoleLog.innerHTML += `<br>[Fetching] Loading real traits for: ${slug}...`;
+            traitsContainer.innerHTML = "<span style='color: #ffcc00;'>Fetching traits from Magic Eden...</span>";
+
+            try {
+                // Using CORS proxy to successfully fetch real attributes from Magic Eden API
+                const targetUrl = `https://api-mainnet.magiceden.dev/v2/collections/${slug}/attributes`;
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+                
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error("Failed to fetch traits");
+                
+                const textData = await response.text();
+                const data = JSON.parse(textData);
+
+                if (data && Array.isArray(data) && data.length > 0) {
+                    let html = '';
+                    data.forEach((attr, idx) => {
+                        const traitText = `${attr.trait_type}: ${attr.value}`;
+                        html += `<div style="margin-bottom: 6px;">
+                            <input type="checkbox" name="traitCheck" value="${traitText}" id="trait_${idx}">
+                            <label for="trait_${idx}" style="display:inline; color:#fff; cursor:pointer;"> ${traitText}</label>
+                        </div>`;
+                    });
+                    traitsContainer.innerHTML = html;
+                    consoleLog.innerHTML += "<br><span style='color: #00ffcc;'>[Success] Real traits loaded successfully! Check desired ones.</span>";
+                } else {
+                    traitsContainer.innerHTML = "<span style='color: #ffcc00;'>No specific traits found for this collection (Floor bidding mode).</span>";
+                    consoleLog.innerHTML += "<br><span style='color: #ffcc00;'>[Notice] Collection has no attribute filters.</span>";
+                }
+            } catch (error) {
+                consoleLog.innerHTML += "<br><span style='color: #ff4444;'>[Error] Could not fetch traits. Check collection slug/link.</span>";
+                traitsContainer.innerHTML = "<span style='color: #ff4444;'>Failed to load. Please check the collection link and try again.</span>";
+            }
+            consoleLog.scrollTop = consoleLog.scrollHeight;
         }
 
         function launchBot() {
-            let inputVal = document.getElementById('collectionInput').value.trim();
-            const traits = document.getElementById('traits').value;
+            const slug = getCleanSlug();
             const minBid = document.getElementById('minBid').value;
             const maxBid = document.getElementById('maxBid').value;
             const quantity = document.getElementById('quantity').value;
             const privateKey = document.getElementById('privateKey').value;
             const consoleLog = document.getElementById('consoleLog');
 
-            if (!inputVal || !privateKey) {
-                consoleLog.innerHTML += "<br><span style='color: #ff4444;'>[Error] Please fill Collection Link/Slug and Private Key!</span>";
+            let selectedTraits = [];
+            document.querySelectorAll('input[name="traitCheck"]:checked').forEach((checkbox) => {
+                selectedTraits.push(checkbox.value);
+            });
+
+            if (!slug || !privateKey) {
+                consoleLog.innerHTML += "<br><span style='color: #ff4444;'>[Error] Please fill Collection and Private Key!</span>";
                 return;
             }
 
-            let collectionSlug = inputVal;
-            if (inputVal.includes('magiceden.io')) {
-                const parts = inputVal.split('/');
-                collectionSlug = parts[parts.length - 1] || parts[parts.length - 2];
-            }
-
-            consoleLog.innerHTML += `<br>[Initializing] Target Collection: ${collectionSlug}`;
-            if (traits) {
-                consoleLog.innerHTML += `<br>[Filter] Target Traits: ${traits}`;
+            consoleLog.innerHTML += `<br>[Initializing] Target Collection: ${slug}`;
+            if (selectedTraits.length > 0) {
+                consoleLog.innerHTML += `<br>[Filter] Selected Traits: ${selectedTraits.join(', ')}`;
             } else {
                 consoleLog.innerHTML += `<br>[Filter] Mode: Floor Bidding (No traits selected)`;
             }
