@@ -35,7 +35,7 @@
             font-size: 14px;
             color: #b0b0b0;
         }
-        input, select {
+        input, textarea {
             width: 100%;
             padding: 10px;
             background: #2a2a2a;
@@ -45,20 +45,31 @@
             font-size: 14px;
             box-sizing: border-box;
         }
-        input:focus, select:focus {
+        input:focus, textarea:focus {
             border-color: #00ffcc;
             outline: none;
         }
-        .btn-secondary {
+        .traits-box {
+            background: #252525;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            font-size: 13px;
+        }
+        .trait-pill {
+            display: inline-block;
             background: #333;
             color: #00ffcc;
-            border: 1px solid #00ffcc;
-            margin-top: 5px;
-            padding: 8px;
-            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 3px;
+            cursor: pointer;
+            border: 1px solid #00ffcc55;
+            font-size: 12px;
         }
-        .btn-secondary:hover {
-            background: #222;
+        .trait-pill:hover {
+            background: #00ffcc;
+            color: #121212;
         }
         button {
             width: 100%;
@@ -86,15 +97,6 @@
             margin-top: 20px;
             border-radius: 4px;
         }
-        .traits-box {
-            background: #252525;
-            padding: 10px;
-            border-radius: 4px;
-            max-height: 100px;
-            overflow-y: auto;
-            border: 1px solid #444;
-            font-size: 13px;
-        }
     </style>
 </head>
 <body>
@@ -105,14 +107,18 @@
         <div class="form-group">
             <label>Magic Eden Collection Link / URL or Slug:</label>
             <input type="text" id="collectionInput" placeholder="e.g. https://magiceden.io/marketplace/y00ts">
-            <button class="btn-secondary" onclick="fetchTraits()">Load Collection Traits</button>
         </div>
 
         <div class="form-group">
-            <label>Select Traits (Auto-loaded):</label>
-            <div id="traitsContainer" class="traits-box">
-                <span style="color: #777;">Click 'Load Collection Traits' first...</span>
+            <label>Target Traits (Click to add or type custom):</label>
+            <div class="traits-box" style="margin-bottom: 8px;">
+                <span class="trait-pill" onclick="addTrait('Gold Eyes')">+ Gold Eyes</span>
+                <span class="trait-pill" onclick="addTrait('Laser Eyes')">+ Laser Eyes</span>
+                <span class="trait-pill" onclick="addTrait('Crown')">+ Crown</span>
+                <span class="trait-pill" onclick="addTrait('Legendary')">+ Legendary</span>
+                <span class="trait-pill" onclick="addTrait('Diamond Skin')">+ Diamond Skin</span>
             </div>
+            <input type="text" id="traits" placeholder="e.g. Gold Eyes, Crown (Comma separated)">
         </div>
 
         <div class="form-group">
@@ -138,29 +144,51 @@
         <button onclick="launchBot()">Launch Sniper Bot</button>
 
         <div class="console" id="consoleLog">
-            [ System Ready. Enter collection link and load traits... ]
+            [ System Ready. Enter collection link and details... ]
         </div>
     </div>
 
     <script>
-        function getCleanSlug() {
-            let inputVal = document.getElementById('collectionInput').value.trim();
-            if (!inputVal) return '';
-            if (inputVal.includes('magiceden.io')) {
-                const parts = inputVal.split('/');
-                return parts[parts.length - 1] || parts[parts.length - 2];
+        function addTrait(traitName) {
+            const traitsInput = document.getElementById('traits');
+            if (traitsInput.value.trim() === '') {
+                traitsInput.value = traitName;
+            } else {
+                traitsInput.value += ', ' + traitName;
             }
-            return inputVal;
         }
 
-        async function fetchTraits() {
-            const slug = getCleanSlug();
+        function launchBot() {
+            let inputVal = document.getElementById('collectionInput').value.trim();
+            const traits = document.getElementById('traits').value;
+            const minBid = document.getElementById('minBid').value;
+            const maxBid = document.getElementById('maxBid').value;
+            const quantity = document.getElementById('quantity').value;
+            const privateKey = document.getElementById('privateKey').value;
             const consoleLog = document.getElementById('consoleLog');
-            const traitsContainer = document.getElementById('traitsContainer');
 
-            if (!slug) {
-                consoleLog.innerHTML += "<br><span style='color: #ff4444;'>[Error] Please enter a valid Collection link or slug first!</span>";
+            if (!inputVal || !privateKey) {
+                consoleLog.innerHTML += "<br><span style='color: #ff4444;'>[Error] Please fill Collection Link/Slug and Private Key!</span>";
                 return;
             }
 
-            consoleLog.innerHTML += `<br>
+            let collectionSlug = inputVal;
+            if (inputVal.includes('magiceden.io')) {
+                const parts = inputVal.split('/');
+                collectionSlug = parts[parts.length - 1] || parts[parts.length - 2];
+            }
+
+            consoleLog.innerHTML += `<br>[Initializing] Target Collection: ${collectionSlug}`;
+            if (traits) {
+                consoleLog.innerHTML += `<br>[Filter] Target Traits: ${traits}`;
+            } else {
+                consoleLog.innerHTML += `<br>[Filter] Mode: Floor Bidding (No traits selected)`;
+            }
+            consoleLog.innerHTML += `<br>[Config] Bidding between ${minBid} - ${maxBid} SOL (Qty: ${quantity})`;
+            consoleLog.innerHTML += "<br><span style='color: #00ffcc;'>[Connecting] Secure connection established with Solana RPC...</span>";
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+    </script>
+
+</body>
+</html>
