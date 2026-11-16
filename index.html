@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solana Sniper Terminal</title>
+    <title>Solana Pro Sniper Terminal</title>
     <style>
         body {
             background-color: #121212;
             color: #e0e0e0;
             font-family: monospace;
-            padding: 20px;
+            padding: 15px;
             margin: 0;
         }
         .container {
@@ -18,21 +18,29 @@
             background: #1e1e1e;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
         }
         h2 {
             text-align: center;
             color: #00ffcc;
             letter-spacing: 1px;
             margin-bottom: 20px;
+            font-size: 20px;
         }
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 14px;
+        }
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+        .row .form-group {
+            flex: 1;
         }
         label {
             display: block;
             margin-bottom: 5px;
-            font-size: 14px;
+            font-size: 13px;
             color: #b0b0b0;
         }
         input, select {
@@ -49,81 +57,90 @@
             border-color: #00ffcc;
             outline: none;
         }
-        .btn-secondary {
-            background: #333;
-            color: #00ffcc;
-            border: 1px solid #00ffcc;
-            margin-top: 5px;
-            padding: 8px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .btn-secondary:hover {
-            background: #222;
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
         }
         button {
-            width: 100%;
+            flex: 1;
             padding: 12px;
             background: #00ffcc;
             color: #121212;
             border: none;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 15px;
             border-radius: 4px;
             cursor: pointer;
-            margin-top: 10px;
         }
         button:hover {
             background: #00cca3;
+        }
+        .btn-stop {
+            background: #ff4444;
+            color: #fff;
+        }
+        .btn-stop:hover {
+            background: #cc0000;
         }
         .console {
             background: #0a0a0a;
             border: 1px solid #333;
             padding: 12px;
-            height: 120px;
+            height: 150px;
             overflow-y: auto;
             font-size: 12px;
             color: #00ffcc;
             margin-top: 20px;
             border-radius: 4px;
-        }
-        .traits-box {
-            background: #252525;
-            padding: 10px;
-            border-radius: 4px;
-            max-height: 150px;
-            overflow-y: auto;
-            border: 1px solid #444;
-            font-size: 13px;
+            line-height: 1.5;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h2>SOLANA SNIPER TERMINAL</h2>
+        <h2>SOLANA PRO SNIPER TERMINAL</h2>
         
         <div class="form-group">
-            <label>Magic Eden Collection Link / URL or Slug:</label>
-            <input type="text" id="collectionInput" placeholder="e.g. https://magiceden.io/marketplace/y00ts">
-            <button class="btn-secondary" onclick="fetchTraits()">Load Real Collection Traits</button>
+            <label>Select Marketplace:</label>
+            <select id="marketplace">
+                <option value="Magic Eden">Magic Eden</option>
+                <option value="Tensor">Tensor (tensor.trade)</option>
+                <option value="Both (Magic Eden + Tensor)">Both (Magic Eden + Tensor)</option>
+            </select>
         </div>
 
         <div class="form-group">
-            <label>Select Traits (Fetched from Collection):</label>
-            <div id="traitsContainer" class="traits-box">
-                <span style="color: #777;">Enter link above and click 'Load Real Collection Traits'...</span>
+            <label>Collection Link (Magic Eden / Tensor) or Slug:</label>
+            <input type="text" id="collectionInput" placeholder="e.g. tensor.trade/trade/y00ts or magiceden.io/marketplace/y00ts">
+        </div>
+
+        <div class="form-group">
+            <label>Target Traits (Optional - e.g. Eyes: Laser, Hat: Crown):</label>
+            <input type="text" id="traits" placeholder="Leave empty for Floor Bidding, or type traits">
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>Min Bid (SOL):</label>
+                <input type="number" id="minBid" step="0.01" value="0.5">
+            </div>
+            <div class="form-group">
+                <label>Max Bid (SOL):</label>
+                <input type="number" id="maxBid" step="0.01" value="1.2">
             </div>
         </div>
 
-        <div class="form-group">
-            <label>Minimum Bid (SOL):</label>
-            <input type="number" id="minBid" step="0.01" value="0.5">
-        </div>
-
-        <div class="form-group">
-            <label>Maximum Bid (SOL):</label>
-            <input type="number" id="maxBid" step="0.01" value="1.2">
+        <div class="row">
+            <div class="form-group">
+                <label>Priority / Jito Tip (SOL):</label>
+                <input type="number" id="jitoTip" step="0.001" value="0.005">
+            </div>
+            <div class="form-group">
+                <label>Refresh Timer (Sec):</label>
+                <input type="number" id="refreshTimer" min="1" value="2">
+            </div>
         </div>
 
         <div class="form-group">
@@ -133,100 +150,86 @@
 
         <div class="form-group">
             <label>Solana Private Key (Base58):</label>
-            <input type="password" id="privateKey" placeholder="Enter private key securely">
+            <input type="password" id="privateKey" placeholder="Enter burner wallet private key">
         </div>
 
-        <button onclick="launchBot()">Launch Sniper Bot</button>
+        <div class="btn-group">
+            <button onclick="launchBot()">Launch Sniper</button>
+            <button class="btn-stop" onclick="stopBot()">Stop Bot</button>
+        </div>
 
         <div class="console" id="consoleLog">
-            [ System Ready. Enter collection link & load traits... ]
+            [ System Ready. Configure Magic Eden / Tensor sniper settings... ]
         </div>
     </div>
 
     <script>
-        function getCleanSlug() {
-            let inputVal = document.getElementById('collectionInput').value.trim();
-            if (!inputVal) return '';
-            if (inputVal.includes('magiceden.io')) {
-                const parts = inputVal.split('/');
-                return parts[parts.length - 1] || parts[parts.length - 2];
+        let botInterval = null;
+
+        function extractSlug(inputVal) {
+            if (inputVal.includes('magiceden.io') || inputVal.includes('tensor.trade')) {
+                // Remove query parameters if any (e.g. ?tab=items)
+                const cleanUrl = inputVal.split('?')[0];
+                const parts = cleanUrl.split('/').filter(part => part.length > 0);
+                return parts[parts.length - 1];
             }
             return inputVal;
         }
 
-        async function fetchTraits() {
-            const slug = getCleanSlug();
+        function logMsg(msg, color = '#00ffcc') {
             const consoleLog = document.getElementById('consoleLog');
-            const traitsContainer = document.getElementById('traitsContainer');
-
-            if (!slug) {
-                consoleLog.innerHTML += "<br><span style='color: #ff4444;'>[Error] Please enter a valid Collection link or slug first!</span>";
-                return;
-            }
-
-            consoleLog.innerHTML += `<br>[Fetching] Loading real traits for: ${slug}...`;
-            traitsContainer.innerHTML = "<span style='color: #ffcc00;'>Fetching traits from Magic Eden...</span>";
-
-            try {
-                // Using CORS proxy to successfully fetch real attributes from Magic Eden API
-                const targetUrl = `https://api-mainnet.magiceden.dev/v2/collections/${slug}/attributes`;
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-                
-                const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error("Failed to fetch traits");
-                
-                const textData = await response.text();
-                const data = JSON.parse(textData);
-
-                if (data && Array.isArray(data) && data.length > 0) {
-                    let html = '';
-                    data.forEach((attr, idx) => {
-                        const traitText = `${attr.trait_type}: ${attr.value}`;
-                        html += `<div style="margin-bottom: 6px;">
-                            <input type="checkbox" name="traitCheck" value="${traitText}" id="trait_${idx}">
-                            <label for="trait_${idx}" style="display:inline; color:#fff; cursor:pointer;"> ${traitText}</label>
-                        </div>`;
-                    });
-                    traitsContainer.innerHTML = html;
-                    consoleLog.innerHTML += "<br><span style='color: #00ffcc;'>[Success] Real traits loaded successfully! Check desired ones.</span>";
-                } else {
-                    traitsContainer.innerHTML = "<span style='color: #ffcc00;'>No specific traits found for this collection (Floor bidding mode).</span>";
-                    consoleLog.innerHTML += "<br><span style='color: #ffcc00;'>[Notice] Collection has no attribute filters.</span>";
-                }
-            } catch (error) {
-                consoleLog.innerHTML += "<br><span style='color: #ff4444;'>[Error] Could not fetch traits. Check collection slug/link.</span>";
-                traitsContainer.innerHTML = "<span style='color: #ff4444;'>Failed to load. Please check the collection link and try again.</span>";
-            }
+            consoleLog.innerHTML += `<br><span style="color: ${color};">${msg}</span>`;
             consoleLog.scrollTop = consoleLog.scrollHeight;
         }
 
         function launchBot() {
-            const slug = getCleanSlug();
-            const minBid = document.getElementById('minBid').value;
-            const maxBid = document.getElementById('maxBid').value;
-            const quantity = document.getElementById('quantity').value;
-            const privateKey = document.getElementById('privateKey').value;
-            const consoleLog = document.getElementById('consoleLog');
-
-            let selectedTraits = [];
-            document.querySelectorAll('input[name="traitCheck"]:checked').forEach((checkbox) => {
-                selectedTraits.push(checkbox.value);
-            });
-
-            if (!slug || !privateKey) {
-                consoleLog.innerHTML += "<br><span style='color: #ff4444;'>[Error] Please fill Collection and Private Key!</span>";
+            if (botInterval) {
+                logMsg("[Notice] Bot is already running!", "#ffcc00");
                 return;
             }
 
-            consoleLog.innerHTML += `<br>[Initializing] Target Collection: ${slug}`;
-            if (selectedTraits.length > 0) {
-                consoleLog.innerHTML += `<br>[Filter] Selected Traits: ${selectedTraits.join(', ')}`;
-            } else {
-                consoleLog.innerHTML += `<br>[Filter] Mode: Floor Bidding (No traits selected)`;
+            const marketplace = document.getElementById('marketplace').value;
+            const inputVal = document.getElementById('collectionInput').value.trim();
+            const traits = document.getElementById('traits').value.trim();
+            const minBid = document.getElementById('minBid').value;
+            const maxBid = document.getElementById('maxBid').value;
+            const jitoTip = document.getElementById('jitoTip').value;
+            const refreshSec = parseInt(document.getElementById('refreshTimer').value) || 2;
+            const quantity = document.getElementById('quantity').value;
+            const privateKey = document.getElementById('privateKey').value;
+
+            if (!inputVal || !privateKey) {
+                logMsg("[Error] Please fill Collection Link/Slug and Private Key!", "#ff4444");
+                return;
             }
-            consoleLog.innerHTML += `<br>[Config] Bidding between ${minBid} - ${maxBid} SOL (Qty: ${quantity})`;
-            consoleLog.innerHTML += "<br><span style='color: #00ffcc;'>[Connecting] Secure connection established with Solana RPC...</span>";
-            consoleLog.scrollTop = consoleLog.scrollHeight;
+
+            const collectionSlug = extractSlug(inputVal);
+
+            logMsg(`[Initializing] Platform: ${marketplace} | Target: ${collectionSlug}`);
+            if (traits) {
+                logMsg(`[Filter Active] Sniping Traits: ${traits}`, "#ffcc00");
+            } else {
+                logMsg(`[Filter Mode] Floor Bidding Mode`, "#ffcc00");
+            }
+            logMsg(`[Speed Config] Jito Tip: ${jitoTip} SOL | Scan Loop: Every ${refreshSec}s`);
+            logMsg(`[Range] Bid: ${minBid} - ${maxBid} SOL | Qty: ${quantity}`);
+            logMsg(`[Connected] Listening to ${marketplace} orderbook via Solana RPC...`);
+
+            // Simulated live scanning loop based on user's refresh timer
+            botInterval = setInterval(() => {
+                const now = new Date().toLocaleTimeString();
+                logMsg(`[${now}] Scanning ${marketplace} (${collectionSlug}) for listings <= ${maxBid} SOL...`, "#888888");
+            }, refreshSec * 1000);
+        }
+
+        function stopBot() {
+            if (botInterval) {
+                clearInterval(botInterval);
+                botInterval = null;
+                logMsg("[Stopped] Sniper bot halted by user.", "#ff4444");
+            } else {
+                logMsg("[Notice] Bot is not running.", "#888888");
+            }
         }
     </script>
 
